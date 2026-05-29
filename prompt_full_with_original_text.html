@@ -1,0 +1,146 @@
+<div style="padding: 1.5rem;">
+
+<div style="margin-bottom: 1rem;">
+<div style="font-size: 11px; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 500; margin-bottom: 6px;">Prompt design · refined v3 · one-shot</div>
+<div style="font-size: 19px; font-weight: 500; line-height: 1.3; color: var(--color-text-primary);">The actual prompt used in the final evaluation</div>
+<div style="font-size: 13px; color: var(--color-text-secondary); margin-top: 4px; line-height: 1.5;">Six sectional blocks · sequential structure · one annotated example</div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
+
+<div style="background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); overflow: hidden;">
+<div style="padding: 10px 14px; background: var(--color-background-secondary); border-bottom: 0.5px solid var(--color-border-tertiary); display: flex; align-items: center; gap: 8px;">
+<span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; background: #AFA9EC; color: #26215C; border-radius: 50%; font-size: 11px; font-weight: 500;">1</span>
+<div style="font-size: 13px; font-weight: 500; color: var(--color-text-primary);">Task definition</div>
+</div>
+<div style="padding: 10px 14px; font-family: var(--font-mono); font-size: 11px; line-height: 1.6; color: var(--color-text-primary); white-space: pre-wrap;">TASK: Tag a single room-camera frame (IR/visible) with predefined tags.
+Return STRICT JSON ONLY (no markdown, no extra text). **Must be valid JSON**.</div>
+</div>
+
+<div style="background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); overflow: hidden;">
+<div style="padding: 10px 14px; background: var(--color-background-secondary); border-bottom: 0.5px solid var(--color-border-tertiary); display: flex; align-items: center; gap: 8px;">
+<span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; background: #AFA9EC; color: #26215C; border-radius: 50%; font-size: 11px; font-weight: 500;">2</span>
+<div style="font-size: 13px; font-weight: 500; color: var(--color-text-primary);">Decision rules · WHAT TO DO</div>
+</div>
+<div style="padding: 10px 14px; font-family: var(--font-mono); font-size: 10.5px; line-height: 1.6; color: var(--color-text-primary); white-space: pre-wrap; max-height: 200px; overflow-y: auto;">1) First decide if the patient is visible.
+   - If patient is visible: include 'patient' in situation_tags.
+   - If patient is NOT visible: do NOT guess pose/location; set poses=["other"] and locations=["other"].
+2) If patient is visible, choose EXACTLY ONE best pose in poses (or "other" if unclear).
+3) If patient is visible, choose EXACTLY ONE best location in locations (or "other" if unclear).
+4) Add other situation_tags if they are visible (staff types, interactions, rails, blanket, cleaning, etc.).
+5) Add sequence_events only when applicable (e.g., subject_identified if patient clearly identifiable).
+6) Tell how many people you see (patient + staff) in "people_count" field.
+7) Assign 'operator_patient_interaction' only if an operator/staff member is visibly touching the patient.
+
+IMPORTANT RULES:
+- Do not invent tags just to avoid empty outputs.
+- If a visible person is clearly the patient, include 'patient' in situation_tags.
+- Do not guess staff, interaction, or anomaly tags when uncertain.</div>
+</div>
+
+<div style="background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); overflow: hidden;">
+<div style="padding: 10px 14px; background: var(--color-background-secondary); border-bottom: 0.5px solid var(--color-border-tertiary); display: flex; align-items: center; gap: 8px;">
+<span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; background: #AFA9EC; color: #26215C; border-radius: 50%; font-size: 11px; font-weight: 500;">3</span>
+<div style="font-size: 13px; font-weight: 500; color: var(--color-text-primary);">Tag vocabulary · ALLOWED TAGS</div>
+</div>
+<div style="padding: 10px 14px; font-family: var(--font-mono); font-size: 10.5px; line-height: 1.6; color: var(--color-text-primary); white-space: pre-wrap; max-height: 180px; overflow-y: auto;">- situation_tags: [educator, doctor, nurse, oss, cleaner, visitor, patient,
+  room_cleaning, patient_cleaning, patient_change, patient_eating,
+  patient_sleeping, patient_reading, patient_watching_tv,
+  operator_patient_interaction, visitor_patient_interaction, wheelchair,
+  blanket, patient_lift, waiting_bed, bedrail_sx, bedrail_dx,
+  bedrail_cover_sx, bedrail_cover_dx]
+
+- sequence_events: [risk_of_falling, operator_patient_interaction,
+  person_down, bed_rails_down, subject_identified, subject_lost,
+  body_part_out_of_bed_perimeter]
+
+- poses: [lying_prone, lying_supine, lying_curled_up_left,
+  lying_curled_down_left, lying_curled_up_right, lying_curled_down_right,
+  seating_edge, seating_over, standing, kneeling, other]
+
+- locations: [other, on_bed, on_floor, on_chair]</div>
+</div>
+
+<div style="background: #EAF3DE; border: 0.5px solid #97C459; border-radius: var(--border-radius-md); overflow: hidden;">
+<div style="padding: 10px 14px; background: #C0DD97; border-bottom: 0.5px solid #97C459; display: flex; align-items: center; gap: 8px;">
+<span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; background: #97C459; color: #173404; border-radius: 50%; font-size: 11px; font-weight: 500;">4</span>
+<div style="font-size: 13px; font-weight: 500; color: #173404;">Tag definitions · semantic grounding</div>
+<span style="font-size: 10px; padding: 2px 6px; background: #173404; color: #EAF3DE; border-radius: 3px; font-weight: 500; margin-left: auto;">key refinement</span>
+</div>
+<div style="padding: 10px 14px; font-family: var(--font-mono); font-size: 10.5px; line-height: 1.6; color: #173404; white-space: pre-wrap; max-height: 200px; overflow-y: auto;">- situation_tags:
+  - oss: An OSS or auxiliary healthcare staff member is present in the scene.
+  - patient: The patient is visible in the scene.
+  - wheelchair: A wheelchair is visible in the scene.
+  - bedrail_sx: The left-side bed rail is visible.
+  - bedrail_cover_sx: The left-side bed rail cover is present.
+  - operator_patient_interaction: When a healthcare operator is directly
+    interacting with the patient.
+  ... (every tag carries a one-line definition)
+
+- sequence_events:
+  - risk_of_falling: Only from bed. Use only if clear fall-risk cues are visible.
+  - person_down: A person is on the floor (fallen/lying/sitting on floor).
+  - subject_identified: Patient clearly visible and identifiable.
+  - body_part_out_of_bed_perimeter: Any joint outside bed perimeter.
+
+- poses:
+  - lying_supine: The patient is lying face up.
+  - seating_edge: The patient is seated on the edge of the bed or chair.
+  - other: None of the above poses, or pose cannot be determined.
+
+- locations:
+  - on_bed: The subject is on the bed (not just touching it, but on it).
+  - on_floor: The subject is on the floor.</div>
+</div>
+
+<div style="background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); overflow: hidden;">
+<div style="padding: 10px 14px; background: var(--color-background-secondary); border-bottom: 0.5px solid var(--color-border-tertiary); display: flex; align-items: center; gap: 8px;">
+<span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; background: #AFA9EC; color: #26215C; border-radius: 50%; font-size: 11px; font-weight: 500;">5</span>
+<div style="font-size: 13px; font-weight: 500; color: var(--color-text-primary);">Output schema</div>
+</div>
+<div style="padding: 10px 14px; font-family: var(--font-mono); font-size: 10.5px; line-height: 1.6; color: var(--color-text-primary); white-space: pre-wrap;">OUTPUT JSON SCHEMA (single line; stop after '}'):
+{
+  "tags": {
+    "situation_tags": ["..."],
+    "sequence_events": ["..."],
+    "poses": ["..."],
+    "locations": ["..."]
+  },
+  "description": "4-5 short sentences about the scene",
+  "people_count": "Tell how many people you see (just a number)"
+}</div>
+</div>
+
+<div style="background: #EAF3DE; border: 0.5px solid #97C459; border-radius: var(--border-radius-md); overflow: hidden;">
+<div style="padding: 10px 14px; background: #C0DD97; border-bottom: 0.5px solid #97C459; display: flex; align-items: center; gap: 8px;">
+<span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; background: #97C459; color: #173404; border-radius: 50%; font-size: 11px; font-weight: 500;">6</span>
+<div style="font-size: 13px; font-weight: 500; color: #173404;">One-shot example · image + annotation</div>
+<span style="font-size: 10px; padding: 2px 6px; background: #173404; color: #EAF3DE; border-radius: 3px; font-weight: 500; margin-left: auto;">stage 2 addition</span>
+</div>
+<div style="padding: 10px 14px; font-family: var(--font-mono); font-size: 10.5px; line-height: 1.6; color: #173404; white-space: pre-wrap; max-height: 200px; overflow-y: auto;">EXAMPLE OF VALID JSON OUTPUT (do not include anything else):
+[example image attached]
+{
+  "tags": {
+    "situation_tags": ["patient", "oss", "wheelchair",
+                       "operator_patient_interaction"],
+    "sequence_events": ["subject_identified",
+                        "operator_patient_interaction"],
+    "poses": ["seating_edge"],
+    "locations": ["on_chair"]
+  },
+  "description": "The patient is seated in a wheelchair. Two OSS staff
+    members are helping the patient. The right bed rail is raised and
+    covered, while the left bed rail is lowered. There is the risk of
+    falling for the patient.",
+  "people_count": "3"
+}</div>
+</div>
+
+</div>
+
+<div style="margin-top: 1rem; padding: 12px 14px; background: var(--color-background-tertiary); border-radius: var(--border-radius-md); font-size: 12px; color: var(--color-text-secondary); line-height: 1.7;">
+<span style="font-weight: 500; color: var(--color-text-primary);">Note:</span>
+Each section is sequential in the actual prompt — separated by explicit headers. The blocks shown above appear in this order. Sections 4 and 6 are the key refinements: tag definitions ground each label in project-specific meaning, and the one-shot example anchors the expected output format.
+</div>
+
+</div>
