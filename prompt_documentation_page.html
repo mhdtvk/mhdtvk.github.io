@@ -1,0 +1,183 @@
+<style>
+.prompt-page { font-family: var(--font-sans); max-width: 100%; }
+.prompt-page h1 { font-size: 22px; font-weight: 500; margin: 0 0 8px; color: var(--color-text-primary); letter-spacing: -0.01em; }
+.prompt-page .lead { font-size: 14px; color: var(--color-text-secondary); margin: 0 0 4px; line-height: 1.6; }
+.prompt-page .meta { font-size: 12px; color: var(--color-text-tertiary); letter-spacing: 0.04em; text-transform: uppercase; margin: 0 0 20px; }
+.prompt-page .section { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); margin-bottom: 14px; overflow: hidden; }
+.prompt-page .section-header { padding: 14px 18px; border-bottom: 0.5px solid var(--color-border-tertiary); display: flex; align-items: center; gap: 10px; background: var(--color-background-secondary); }
+.prompt-page .section-num { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; font-size: 12px; font-weight: 500; background: var(--color-background-tertiary); color: var(--color-text-secondary); }
+.prompt-page .section-title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); margin: 0; }
+.prompt-page .section-subtitle { font-size: 12px; color: var(--color-text-secondary); margin-left: auto; font-family: var(--font-mono); }
+.prompt-page .badge { font-size: 10px; padding: 3px 8px; border-radius: 12px; font-weight: 500; letter-spacing: 0.03em; }
+.prompt-page .badge-key { background: #3B6D11; color: #EAF3DE; }
+.prompt-page .badge-stage2 { background: #534AB7; color: #EEEDFE; }
+.prompt-page .code-block { padding: 16px 18px; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.65; color: var(--color-text-primary); white-space: pre-wrap; max-height: 240px; overflow-y: auto; }
+.prompt-page .code-block.scroll-fade { position: relative; }
+.prompt-page .key-section { border-color: #97C459; }
+.prompt-page .key-section .section-header { background: #EAF3DE; border-bottom-color: #97C459; }
+.prompt-page .key-section .section-num { background: #97C459; color: #173404; }
+.prompt-page .key-section .section-title { color: #173404; }
+.prompt-page .stage2-section { border-color: #AFA9EC; }
+.prompt-page .stage2-section .section-header { background: #EEEDFE; border-bottom-color: #AFA9EC; }
+.prompt-page .stage2-section .section-num { background: #AFA9EC; color: #26215C; }
+.prompt-page .stage2-section .section-title { color: #26215C; }
+.prompt-page .kw { color: #534AB7; font-weight: 500; }
+.prompt-page .kw-key { color: #3B6D11; font-weight: 500; }
+.prompt-page .str { color: #993C1D; }
+.prompt-page .num { color: #185FA5; }
+.prompt-page .cm { color: #888780; font-style: italic; }
+.prompt-page .footer-note { padding: 14px 18px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); margin-top: 18px; font-size: 13px; color: var(--color-text-secondary); line-height: 1.65; }
+</style>
+
+<div class="prompt-page">
+
+<h1>Final prompt structure</h1>
+<p class="lead">Six sequential blocks · refined wording · semantic grounding · one-shot example</p>
+<p class="meta">Stage 1 + 2 winning configuration</p>
+
+<div class="section">
+<div class="section-header">
+<span class="section-num">1</span>
+<span class="section-title">Task definition</span>
+<span class="section-subtitle">=== task ===</span>
+</div>
+<div class="code-block"><span class="kw">TASK:</span> Tag a single room-camera frame (IR/visible) with predefined tags.
+Return <span class="kw">STRICT JSON ONLY</span> (no markdown, no extra text). <span class="cm">**Must be valid JSON**</span>.</div>
+</div>
+
+<div class="section">
+<div class="section-header">
+<span class="section-num">2</span>
+<span class="section-title">Decision rules</span>
+<span class="section-subtitle">=== what to do ===</span>
+</div>
+<div class="code-block"><span class="num">1)</span> First decide if the patient is visible.
+   - If patient is visible: include <span class="str">'patient'</span> in situation_tags.
+   - If patient is NOT visible: do NOT guess pose/location;
+     set poses=<span class="str">["other"]</span> and locations=<span class="str">["other"]</span>.
+<span class="num">2)</span> If patient is visible, choose EXACTLY ONE best pose.
+<span class="num">3)</span> If patient is visible, choose EXACTLY ONE best location.
+<span class="num">4)</span> Add other situation_tags if they are visible.
+<span class="num">5)</span> Add sequence_events only when applicable.
+<span class="num">6)</span> Tell how many people you see in <span class="str">"people_count"</span>.
+<span class="num">7)</span> Assign <span class="str">'operator_patient_interaction'</span> only if visibly touching.
+
+<span class="cm">IMPORTANT RULES:</span>
+- Do not invent tags just to avoid empty outputs.
+- Do not guess staff, interaction, or anomaly tags when uncertain.</div>
+</div>
+
+<div class="section">
+<div class="section-header">
+<span class="section-num">3</span>
+<span class="section-title">Tag vocabulary</span>
+<span class="section-subtitle">=== allowed tags ===</span>
+</div>
+<div class="code-block"><span class="kw">situation_tags:</span> [
+  educator, doctor, nurse, oss, cleaner, visitor, patient,
+  room_cleaning, patient_cleaning, patient_change,
+  patient_eating, patient_sleeping, patient_reading,
+  patient_watching_tv, operator_patient_interaction,
+  visitor_patient_interaction, wheelchair, blanket,
+  patient_lift, waiting_bed, bedrail_sx, bedrail_dx,
+  bedrail_cover_sx, bedrail_cover_dx
+]
+
+<span class="kw">sequence_events:</span> [
+  risk_of_falling, operator_patient_interaction, person_down,
+  bed_rails_down, subject_identified, subject_lost,
+  body_part_out_of_bed_perimeter
+]
+
+<span class="kw">poses:</span> [
+  lying_prone, lying_supine, lying_curled_up_left,
+  lying_curled_down_left, lying_curled_up_right,
+  lying_curled_down_right, seating_edge, seating_over,
+  standing, kneeling, other
+]
+
+<span class="kw">locations:</span> [other, on_bed, on_floor, on_chair]</div>
+</div>
+
+<div class="section key-section">
+<div class="section-header">
+<span class="section-num">4</span>
+<span class="section-title">Tag definitions</span>
+<span class="badge badge-key">key refinement</span>
+<span class="section-subtitle">=== definitions ===</span>
+</div>
+<div class="code-block"><span class="kw-key">situation_tags:</span>
+  <span class="kw-key">oss:</span> An OSS or auxiliary healthcare staff member is present.
+  <span class="kw-key">patient:</span> The patient is visible in the scene.
+  <span class="kw-key">wheelchair:</span> A wheelchair is visible in the scene.
+  <span class="kw-key">bedrail_sx:</span> The left-side bed rail is visible.
+  <span class="kw-key">bedrail_cover_sx:</span> The left-side bed rail cover is present.
+  <span class="kw-key">operator_patient_interaction:</span>
+    Healthcare operator directly interacting with the patient.
+  <span class="cm">... every tag carries a one-line definition</span>
+
+<span class="kw-key">sequence_events:</span>
+  <span class="kw-key">risk_of_falling:</span> Only from bed. Use only if clear cues visible.
+  <span class="kw-key">person_down:</span> A person is on the floor.
+  <span class="kw-key">subject_identified:</span> Patient clearly visible and identifiable.
+
+<span class="kw-key">poses:</span>
+  <span class="kw-key">lying_supine:</span> Patient lying face up.
+  <span class="kw-key">seating_edge:</span> Patient seated on the edge of bed or chair.
+  <span class="kw-key">other:</span> None of the above, or pose cannot be determined.
+
+<span class="kw-key">locations:</span>
+  <span class="kw-key">on_bed:</span> Subject is on the bed (not just touching it).
+  <span class="kw-key">on_floor:</span> Subject is on the floor.</div>
+</div>
+
+<div class="section">
+<div class="section-header">
+<span class="section-num">5</span>
+<span class="section-title">Output schema</span>
+<span class="section-subtitle">=== output format ===</span>
+</div>
+<div class="code-block"><span class="cm">// Single line, stop after final '}'</span>
+{
+  <span class="str">"tags"</span>: {
+    <span class="str">"situation_tags"</span>: [<span class="str">"..."</span>],
+    <span class="str">"sequence_events"</span>: [<span class="str">"..."</span>],
+    <span class="str">"poses"</span>: [<span class="str">"..."</span>],
+    <span class="str">"locations"</span>: [<span class="str">"..."</span>]
+  },
+  <span class="str">"description"</span>: <span class="str">"4-5 short sentences about the scene"</span>,
+  <span class="str">"people_count"</span>: <span class="str">"number"</span>
+}</div>
+</div>
+
+<div class="section stage2-section">
+<div class="section-header">
+<span class="section-num">6</span>
+<span class="section-title">One-shot example</span>
+<span class="badge badge-stage2">stage 2 addition</span>
+<span class="section-subtitle">image + annotation</span>
+</div>
+<div class="code-block"><span class="cm">// A reference image is attached, followed by:</span>
+{
+  <span class="str">"tags"</span>: {
+    <span class="str">"situation_tags"</span>: [<span class="str">"patient"</span>, <span class="str">"oss"</span>, <span class="str">"wheelchair"</span>,
+                       <span class="str">"operator_patient_interaction"</span>],
+    <span class="str">"sequence_events"</span>: [<span class="str">"subject_identified"</span>,
+                        <span class="str">"operator_patient_interaction"</span>],
+    <span class="str">"poses"</span>: [<span class="str">"seating_edge"</span>],
+    <span class="str">"locations"</span>: [<span class="str">"on_chair"</span>]
+  },
+  <span class="str">"description"</span>: <span class="str">"The patient is seated in a wheelchair.
+    Two OSS staff members are helping the patient. The right bed
+    rail is raised and covered, while the left bed rail is lowered.
+    There is the risk of falling for the patient."</span>,
+  <span class="str">"people_count"</span>: <span class="str">"3"</span>
+}</div>
+</div>
+
+<div class="footer-note">
+<strong style="color: var(--color-text-primary); font-weight: 500;">Why this structure works.</strong>
+Each section is separated by an explicit header, reducing cross-section interference in the model's attention. Section <strong style="color: #173404; font-weight: 500;">4</strong> grounds each label in project-specific meaning. Section <strong style="color: #26215C; font-weight: 500;">6</strong> anchors the expected output format with a concrete annotated pattern.
+</div>
+
+</div>
