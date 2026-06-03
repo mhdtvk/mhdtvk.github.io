@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompt Comparison — VLM Tagging Pipeline</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #13161e;
+    --surface-2: #1a1e2a;
+    --surface-3: #1f2435;
+    --border: #252a38;
+    --border-light: #2e3448;
+    --text-primary: #e8ecf4;
+    --text-secondary: #8b92a8;
+    --text-muted: #555d73;
+    --accent-1: #4f8ef7;
+    --accent-1-dim: rgba(79,142,247,0.12);
+    --accent-2: #f76a4f;
+    --accent-2-dim: rgba(247,106,79,0.12);
+    --accent-add: #52c87a;
+    --accent-add-dim: rgba(82,200,122,0.10);
+    --accent-change: #f0b340;
+    --accent-change-dim: rgba(240,179,64,0.10);
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --display: 'Playfair Display', serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Header ── */
+  header {
+    padding: 36px 48px 28px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #111521 0%, var(--bg) 100%);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+  header .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  header h1 {
+    font-family: var(--display);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+  }
+  header .subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  /* ── Legend ── */
+  .legend {
+    display: flex;
+    gap: 24px;
+    padding: 16px 48px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-family: var(--mono);
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: var(--mono);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+  .badge-same    { background: var(--surface-3); color: var(--text-muted); border: 1px solid var(--border-light); }
+  .badge-add     { background: var(--accent-add-dim); color: var(--accent-add); border: 1px solid rgba(82,200,122,0.25); }
+  .badge-change  { background: var(--accent-change-dim); color: var(--accent-change); border: 1px solid rgba(240,179,64,0.25); }
+
+  /* ── Main layout ── */
+  .compare-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    min-height: calc(100vh - 130px);
+  }
+
+  /* ── Column headers ── */
+  .col-header {
+    padding: 20px 32px 16px;
+    border-bottom: 2px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: sticky;
+    top: 117px;
+    z-index: 50;
+    background: var(--surface);
+  }
+  .col-header-1 { border-right: 1px solid var(--border); }
+  .col-header-2 { }
+
+  .col-pill {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .col-pill-1 { background: var(--accent-1-dim); color: var(--accent-1); border: 1px solid rgba(79,142,247,0.3); }
+  .col-pill-2 { background: var(--accent-2-dim); color: var(--accent-2); border: 1px solid rgba(247,106,79,0.3); }
+
+  .col-title { font-weight: 600; font-size: 15px; }
+  .col-sub   { font-size: 12px; color: var(--text-muted); font-family: var(--mono); margin-top: 2px; }
+
+  /* ── Grid container under headers ── */
+  .col-grid { display: contents; }
+
+  /* ── Section rows ── */
+  .section-row {
+    display: contents;
+  }
+
+  .section-label {
+    grid-column: 1 / -1;
+    padding: 10px 32px;
+    background: var(--surface-2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-light);
+    margin-left: 8px;
+  }
+
+  /* ── Cell ── */
+  .cell {
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+    vertical-align: top;
+    position: relative;
+    transition: background 0.15s;
+  }
+  .cell-1 { border-right: 1px solid var(--border); background: var(--surface); }
+  .cell-2 { background: var(--surface); }
+  .cell:hover { background: var(--surface-2); }
+
+  /* Highlight states */
+  .cell.added   { background: var(--accent-add-dim) !important; }
+  .cell.changed { background: var(--accent-change-dim) !important; }
+  .cell.same    { }
+
+  /* Inline diff within cells */
+  .diff-add    { background: rgba(82,200,122,0.18); color: var(--accent-add); border-radius: 3px; padding: 0 2px; }
+  .diff-remove { background: rgba(247,106,79,0.15); color: var(--accent-2); text-decoration: line-through; border-radius: 3px; padding: 0 2px; }
+
+  /* Tag chips */
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-family: var(--mono);
+    letter-spacing: 0.02em;
+    border: 1px solid transparent;
+  }
+  .tag-neutral { background: var(--surface-3); color: var(--text-secondary); border-color: var(--border-light); }
+  .tag-blue    { background: var(--accent-1-dim); color: var(--accent-1); border-color: rgba(79,142,247,0.25); }
+  .tag-orange  { background: var(--accent-2-dim); color: var(--accent-2); border-color: rgba(247,106,79,0.25); }
+
+  /* ── Summary bar at bottom ── */
+  .summary {
+    grid-column: 1 / -1;
+    padding: 24px 48px;
+    background: var(--surface-2);
+    border-top: 1px solid var(--border-light);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  .summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+  }
+  .summary-card h3 {
+    font-size: 11px;
+    font-family: var(--mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .summary-card p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+  .summary-card strong { color: var(--text-primary); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+
+  /* ── Sticky column headers container ── */
+  .col-headers-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    position: sticky;
+    top: 117px;
+    z-index: 50;
+  }
+
+  /* ── Diff marker ── */
+  .diff-marker {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    width: 6px; height: 6px;
+    border-radius: 50%;
+  }
+  .diff-marker-add    { background: var(--accent-add); }
+  .diff-marker-change { background: var(--accent-change); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">VLM Tagging Pipeline · System Prompt Analysis</div>
+  <h1>Prompt Comparison</h1>
+  <div class="subtitle">Side-by-side diff of v1 vs v2 room-camera frame tagging prompts</div>
+</header>
+
+<div class="legend">
+  <div class="legend-item"><span class="badge badge-same">identical</span> Shared in both prompts</div>
+  <div class="legend-item"><span class="badge badge-add">+ added</span> New in Prompt 2</div>
+  <div class="legend-item"><span class="badge badge-change">~ changed</span> Modified in Prompt 2</div>
+</div>
+
+<div class="col-headers-row">
+  <div class="col-header col-header-1">
+    <div class="col-pill col-pill-1">P1</div>
+    <div>
+      <div class="col-title">Prompt 1 — Baseline</div>
+      <div class="col-sub">no definitions · no examples</div>
+    </div>
+  </div>
+  <div class="col-header col-header-2">
+    <div class="col-pill col-pill-2">P2</div>
+    <div>
+      <div class="col-title">Prompt 2 — Enhanced</div>
+      <div class="col-sub">+ definitions · + example output</div>
+    </div>
+  </div>
+</div>
+
+<div class="compare-wrapper">
+
+  <!-- ══════════════════════════════════ TASK HEADER ══════════════════════════════════ -->
+  <div class="section-label">Task Declaration</div>
+
+  <div class="cell cell-1 same">
+TASK: Tag a single room-camera frame (IR/visible) with predefined tags.
+Return STRICT JSON ONLY (no markdown, no extra text). <strong>Must be valid JSON</strong>.
+  </div>
+  <div class="cell cell-2 same">
+TASK: Tag a single room-camera frame (IR/visible) with predefined tags.
+Return STRICT JSON ONLY (no markdown, no extra text). <strong>Must be valid JSON</strong>.
+  </div>
+
+  <!-- ══════════════════════════════════ DECISION RULES ══════════════════════════════════ -->
+  <div class="section-label">Decision Rules (WHAT TO DO)</div>
+
+  <div class="cell cell-1 same">
+1) First decide if the patient is visible.
+   - If patient is visible → include 'patient' in situation_tags.
+   - If NOT visible → set poses=["other"], locations=["other"].
+
+2) If visible: choose EXACTLY ONE best pose (or "other").
+
+3) If visible: choose EXACTLY ONE best location (or "other").
+
+4) Add other situation_tags if visible
+   (staff types, interactions, rails, blanket, cleaning, etc.)
+
+5) Add sequence_events only when applicable.
+
+6) Tell how many people in "people_count" field.
+
+7) Assign 'operator_patient_interaction' only if staff is
+   <em>visibly touching</em> the patient.
+   (hand-holding, repositioning, examining, dressing,
+    cleaning, transferring…)
+   — NOT for proximity, verbal, observation, or ambiguous contact.
+  </div>
+  <div class="cell cell-2 same">
+1) First decide if the patient is visible.
+   - If patient is visible → include 'patient' in situation_tags.
+   - If NOT visible → set poses=["other"], locations=["other"].
+
+2) If visible: choose EXACTLY ONE best pose (or "other").
+
+3) If visible: choose EXACTLY ONE best location (or "other").
+
+4) Add other situation_tags if visible
+   (staff types, interactions, rails, blanket, cleaning, etc.)
+
+5) Add sequence_events only when applicable.
+
+6) Tell how many people in "people_count" field.
+
+7) Assign 'operator_patient_interaction' only if staff is
+   <em>visibly touching</em> the patient.
+   (hand-holding, repositioning, examining, dressing,
+    cleaning, transferring…)
+   — NOT for proximity, verbal, observation, or ambiguous contact.
+  </div>
+
+  <!-- ══════════════════════════════════ IMPORTANT RULES ══════════════════════════════════ -->
+  <div class="section-label">Important Rules</div>
+
+  <div class="cell cell-1 same">
+- Do not invent tags to avoid empty outputs.
+- If patient not visible → poses=["other"], locations=["other"].
+- If clearly patient → include 'patient' in situation_tags.
+- Do not guess staff / interaction / anomaly tags when uncertain.
+- 'anomaly_general' only for clearly visible unsafe situations.
+  </div>
+  <div class="cell cell-2 same">
+- Do not invent tags to avoid empty outputs.
+- If patient not visible → poses=["other"], locations=["other"].
+- If clearly patient → include 'patient' in situation_tags.
+- Do not guess staff / interaction / anomaly tags when uncertain.
+- 'anomaly_general' only for clearly visible unsafe situations.
+  </div>
+
+  <!-- ══════════════════════════════════ ALLOWED TAGS ══════════════════════════════════ -->
+  <div class="section-label">Allowed Tags</div>
+
+  <div class="cell cell-1 same">
+ALLOWED TAGS (do not invent tags; ignore anything outside lists):
+
+<div class="tag-row">
+  <span class="tag tag-neutral">situation_tags</span>
+  <span class="tag tag-neutral">sequence_events</span>
+  <span class="tag tag-neutral">poses</span>
+  <span class="tag tag-neutral">locations</span>
+</div>
+<br>
+→ Provided via <code>{allowed_situation}</code>, <code>{allowed_events}</code>,
+  <code>{allowed_poses}</code>, <code>{allowed_locations}</code>
+  </div>
+  <div class="cell cell-2 same">
+ALLOWED TAGS (do not invent tags; ignore anything outside lists):
+
+<div class="tag-row">
+  <span class="tag tag-neutral">situation_tags</span>
+  <span class="tag tag-neutral">sequence_events</span>
+  <span class="tag tag-neutral">poses</span>
+  <span class="tag tag-neutral">locations</span>
+</div>
+<br>
+→ Provided via <code>{allowed_situation}</code>, <code>{allowed_events}</code>,
+  <code>{allowed_poses}</code>, <code>{allowed_locations}</code>
+  </div>
+
+  <!-- ══════════════════════════════════ TAG DEFINITIONS ══════════════════════════════════ -->
+  <div class="section-label">Tag Definitions &nbsp;<span class="badge badge-add">+ added in P2</span></div>
+
+  <div class="cell cell-1 same" style="color: var(--text-muted); font-style: italic;">
+    ✕ &nbsp;Not present in Prompt 1
+<br><br>Model must infer tag meanings purely from the allowed list strings and decision rules.
+  </div>
+  <div class="cell cell-2 added" style="position:relative;">
+    <div class="diff-marker diff-marker-add"></div>
+TAG DEFINITIONS (use these meanings to choose correct tags):
+
+- situation_tags:
+  <span class="diff-add">{situation_definitions}</span>
+
+- sequence_events:
+  <span class="diff-add">{event_definitions}</span>
+
+- poses:
+  <span class="diff-add">{pose_definitions}</span>
+
+- locations:
+  <span class="diff-add">{location_definitions}</span>
+
+<br>→ Explicit per-tag semantics injected at inference time.
+  </div>
+
+  <!-- ══════════════════════════════════ OUTPUT SCHEMA ══════════════════════════════════ -->
+  <div class="section-label">Output JSON Schema &nbsp;<span class="badge badge-change">~ changed in P2</span></div>
+
+  <div class="cell cell-1 changed" style="position:relative;">
+    <div class="diff-marker diff-marker-change"></div>
+{
+  "tags": {
+    "situation_tags": ["..."],
+    "sequence_events": ["..."],
+    "poses":           ["..."],
+    "locations":       ["..."]
+  },
+  "description": <span class="diff-remove">"3-4 short sentences"</span>,
+  "people_count": "(number)"
+}
+  </div>
+  <div class="cell cell-2 changed" style="position:relative;">
+    <div class="diff-marker diff-marker-change"></div>
+{
+  "tags": {
+    "situation_tags": ["..."],
+    "sequence_events": ["..."],
+    "poses":           ["..."],
+    "locations":       ["..."]
+  },
+  "description": <span class="diff-add">"4-5 short sentences"</span>,
+  "people_count": "(number)"
+}
+  </div>
+
+  <!-- ══════════════════════════════════ EXAMPLE OUTPUT ══════════════════════════════════ -->
+  <div class="section-label">Example Output &nbsp;<span class="badge badge-add">+ added in P2</span></div>
+
+  <div class="cell cell-1 same" style="color: var(--text-muted); font-style: italic;">
+    ✕ &nbsp;Not present in Prompt 1
+<br><br>No few-shot example provided. Model generates output format from schema alone.
+  </div>
+  <div class="cell cell-2 added" style="position:relative;">
+    <div class="diff-marker diff-marker-add"></div>
+EXAMPLE OF VALID JSON OUTPUT (do not include anything else):
+
+<span class="diff-add">{
+  "tags": {
+    "situation_tags": ["patient","oss","wheelchair",
+                       "operator_patient_interaction"],
+    "sequence_events": ["subject_identified",
+                        "operator_patient_interaction"],
+    "poses":     ["seating_edge"],
+    "locations": ["on_chair"]
+  },
+  "description": "The patient is seated in a wheelchair.
+Two OSS staff members are helping the patient.
+The right bed rail is raised and covered, the left
+rail is lowered. There is a fall risk.",
+  "people_count": "3"
+}</span>
+  </div>
+
+  <!-- ══════════════════════════════════ SUMMARY ══════════════════════════════════ -->
+  <div class="summary">
+    <div class="summary-card">
+      <h3>Shared Structure</h3>
+      <p>Task declaration, all 7 decision rules, important rules, allowed tag lists, and JSON schema fields are <strong>identical</strong> in both prompts.</p>
+    </div>
+    <div class="summary-card">
+      <h3>What P2 Adds</h3>
+      <p><strong>Tag Definitions block</strong> — explicit semantics per tag group injected at runtime.<br>
+      <strong>Few-shot Example</strong> — a complete valid JSON output showing multi-tag scenario with a fall-risk patient.<br>
+      <strong>description length</strong> bumped from 3–4 → <strong>4–5 sentences</strong>.</p>
+    </div>
+    <div class="summary-card">
+      <h3>Expected Impact</h3>
+      <p>P2 reduces ambiguity: the model has both <strong>grounded tag meanings</strong> (less hallucination) and a <strong>format anchor</strong> (fewer schema violations). Trade-off: longer prompt, higher token cost per call.</p>
+    </div>
+  </div>
+
+</div><!-- /compare-wrapper -->
+
+</body>
+</html>
